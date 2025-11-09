@@ -29,38 +29,30 @@ import io.element.android.libraries.push.impl.notifications.NotificationResolver
 import io.element.android.libraries.workmanager.api.WorkManagerScheduler
 import io.element.android.libraries.workmanager.api.di.MetroWorkerFactory
 import io.element.android.libraries.workmanager.api.di.WorkerKey
+import io.element.android.services.toolbox.api.sdk.BuildVersionSdkIntProvider
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.serialization.json.Json
 import timber.log.Timber
 import kotlin.time.Duration.Companion.seconds
 
 @AssistedInject
 class FetchNotificationsWorker(
     @Assisted workerParams: WorkerParameters,
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
     private val networkMonitor: NetworkMonitor,
     private val eventResolver: NotifiableEventResolver,
     private val queue: NotificationResolverQueue,
     private val workManagerScheduler: WorkManagerScheduler,
     private val syncOnNotifiableEvent: SyncOnNotifiableEvent,
     private val coroutineDispatchers: CoroutineDispatchers,
-    private val json: Json,
+    private val workerDataConverter: WorkerDataConverter,
+    private val buildVersionSdkIntProvider: BuildVersionSdkIntProvider,
 ) : CoroutineWorker(context, workerParams) {
     override suspend fun doWork(): Result = withContext(coroutineDispatchers.io) {
         Timber.d("FetchNotificationsWorker started")
-        val rawRequestsJson = inputData.getString("requests") ?: return@withContext Result.failure()
-        val requests = runCatchingExceptions {
-            json.decodeFromString<List<SyncNotificationWorkManagerRequest.Data>>(rawRequestsJson).map { it.toRequest() }
-        }.getOrElse {
-            Timber.e(it, "Failed to deserialize notification requests")
-            return@withContext Result.failure()
-        }
-
-        Timber.d("Deserialized ${requests.size} requests")
-
+        val requests = workerDataConverter.deserialize(inputData) ?: return@withContext Result.failure()
         // Wait for network to be available, but not more than 10 seconds
         val hasNetwork = withTimeoutOrNull(10.seconds) {
             networkMonitor.connectivity.first { it == NetworkStatus.Connected }
@@ -93,7 +85,14 @@ class FetchNotificationsWorker(
             for (failedSessionId in failedSyncForSessions) {
                 val requestsToRetry = groupedRequests[failedSessionId] ?: continue
                 Timber.d("Re-scheduling ${requestsToRetry.size} failed notification requests for session $failedSessionId")
-                workManagerScheduler.submit(SyncNotificationWorkManagerRequest(failedSessionId, requestsToRetry))
+                workManagerScheduler.submit(
+                    SyncNotificationWorkManagerRequest(
+                        sessionId = failedSessionId,
+                        notificationEventRequests = requestsToRetry,
+                        workerDataConverter = workerDataConverter,
+                        buildVersionSdkIntProvider = buildVersionSdkIntProvider,
+                    )
+                )
             }
         }
 
@@ -119,5 +118,5 @@ class FetchNotificationsWorker(
     @ContributesIntoMap(AppScope::class, binding = binding<MetroWorkerFactory.WorkerInstanceFactory<*>>())
     @WorkerKey(FetchNotificationsWorker::class)
     @AssistedFactory
-    abstract class Factory : MetroWorkerFactory.WorkerInstanceFactory<FetchNotificationsWorker>
+    interface Factory : MetroWorkerFactory.WorkerInstanceFactory<FetchNotificationsWorker>
 }

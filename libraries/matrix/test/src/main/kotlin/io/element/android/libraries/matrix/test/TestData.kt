@@ -7,7 +7,7 @@
 
 package io.element.android.libraries.matrix.test
 
-import io.element.android.libraries.matrix.api.auth.MatrixHomeServerDetails
+import androidx.annotation.ColorInt
 import io.element.android.libraries.matrix.api.core.DeviceId
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomAlias
@@ -78,8 +78,6 @@ const val AN_ACCOUNT_PROVIDER = "matrix.org"
 const val AN_ACCOUNT_PROVIDER_2 = "element.io"
 const val AN_ACCOUNT_PROVIDER_3 = "other.io"
 
-val A_HOMESERVER = MatrixHomeServerDetails(A_HOMESERVER_URL, supportsPasswordLogin = true, supportsOidcLogin = false)
-val A_HOMESERVER_OIDC = MatrixHomeServerDetails(A_HOMESERVER_URL, supportsPasswordLogin = false, supportsOidcLogin = true)
 val A_ROOM_NOTIFICATION_MODE = RoomNotificationMode.MUTE
 
 const val AN_AVATAR_URL = "mxc://data"
@@ -98,3 +96,6 @@ const val A_TIMESTAMP = 567L
 const val A_FORMATTED_DATE = "April 6, 1980 at 6:35 PM"
 
 const val A_LOGIN_HINT = "mxid:@alice:example.org"
+
+@ColorInt
+const val A_COLOR_INT: Int = 0xFFFF0000.toInt()

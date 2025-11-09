@@ -18,8 +18,6 @@ import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import io.element.android.appconfig.ApplicationConfig
 import io.element.android.features.enterprise.api.EnterpriseService
-import io.element.android.features.messages.impl.timeline.components.customreaction.DefaultEmojibaseProvider
-import io.element.android.features.messages.impl.timeline.components.customreaction.EmojibaseProvider
 import io.element.android.libraries.androidutils.system.getVersionCodeFromManifest
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
 import io.element.android.libraries.core.meta.BuildMeta
@@ -29,13 +27,14 @@ import io.element.android.libraries.di.BaseDirectory
 import io.element.android.libraries.di.CacheDirectory
 import io.element.android.libraries.di.annotations.AppCoroutineScope
 import io.element.android.libraries.di.annotations.ApplicationContext
+import io.element.android.libraries.recentemojis.api.EmojibaseProvider
+import io.element.android.libraries.recentemojis.impl.DefaultEmojibaseProvider
 import io.element.android.x.BuildConfig
 import io.element.android.x.R
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.plus
-import kotlinx.serialization.json.Json
 import java.io.File
 
 @BindingContainer
@@ -120,11 +119,5 @@ object AppModule {
     @SingleIn(AppScope::class)
     fun providesEmojibaseProvider(@ApplicationContext context: Context): EmojibaseProvider {
         return DefaultEmojibaseProvider(context)
-    }
-
-    @Provides
-    @SingleIn(AppScope::class)
-    fun providesJson(): Json = Json {
-        ignoreUnknownKeys = true
     }
 }

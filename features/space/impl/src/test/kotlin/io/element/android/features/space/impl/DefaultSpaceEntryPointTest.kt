@@ -15,6 +15,7 @@ import io.element.android.features.space.api.SpaceEntryPoint
 import io.element.android.features.space.impl.di.FakeSpaceFlowGraph
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.test.A_ROOM_ID
+import io.element.android.libraries.matrix.test.room.FakeJoinedRoom
 import io.element.android.libraries.matrix.test.spaces.FakeSpaceRoomList
 import io.element.android.libraries.matrix.test.spaces.FakeSpaceService
 import io.element.android.tests.testutils.lambda.lambdaError
@@ -40,16 +41,20 @@ class DefaultSpaceEntryPointTest {
                 spaceService = FakeSpaceService(
                     spaceRoomListResult = { _: RoomId -> FakeSpaceRoomList(A_ROOM_ID) }
                 ),
+                room = FakeJoinedRoom(),
                 graphFactory = FakeSpaceFlowGraph.Factory
             )
         }
         val callback = object : SpaceEntryPoint.Callback {
-            override fun onOpenRoom(roomId: RoomId, viaParameters: List<String>) = lambdaError()
+            override fun navigateToRoom(roomId: RoomId, viaParameters: List<String>) = lambdaError()
+            override fun navigateToRoomMemberList() = lambdaError()
         }
-        val result = entryPoint.nodeBuilder(parentNode, BuildContext.root(null))
-            .inputs(nodeInputs)
-            .callback(callback)
-            .build()
+        val result = entryPoint.createNode(
+            parentNode = parentNode,
+            buildContext = BuildContext.root(null),
+            inputs = nodeInputs,
+            callback = callback,
+        )
         assertThat(result).isInstanceOf(SpaceFlowNode::class.java)
         assertThat(result.plugins).contains(nodeInputs)
         assertThat(result.plugins).contains(callback)

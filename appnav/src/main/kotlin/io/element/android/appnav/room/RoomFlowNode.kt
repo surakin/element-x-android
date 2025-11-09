@@ -9,8 +9,6 @@ package io.element.android.appnav.room
 
 import android.os.Parcelable
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.bumble.appyx.core.modality.BuildContext
@@ -32,30 +30,29 @@ import io.element.android.features.joinroom.api.JoinRoomEntryPoint
 import io.element.android.features.roomaliasesolver.api.RoomAliasResolverEntryPoint
 import io.element.android.features.roomaliasesolver.api.RoomAliasResolverEntryPoint.Params
 import io.element.android.features.roomdirectory.api.RoomDescription
-import io.element.android.features.space.api.SpaceEntryPoint
 import io.element.android.libraries.architecture.BackstackView
 import io.element.android.libraries.architecture.BaseFlowNode
 import io.element.android.libraries.architecture.NodeInputs
 import io.element.android.libraries.architecture.createNode
 import io.element.android.libraries.architecture.inputs
-import io.element.android.libraries.core.bool.orFalse
 import io.element.android.libraries.core.coroutine.withPreviousValue
 import io.element.android.libraries.di.SessionScope
 import io.element.android.libraries.matrix.api.MatrixClient
+import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomAlias
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.RoomIdOrAlias
+import io.element.android.libraries.matrix.api.core.ThreadId
 import io.element.android.libraries.matrix.api.room.CurrentUserMembership
 import io.element.android.libraries.matrix.api.room.RoomMembershipObserver
 import io.element.android.libraries.matrix.api.room.alias.ResolvedRoomAlias
-import io.element.android.libraries.matrix.api.sync.SyncService
 import io.element.android.libraries.matrix.ui.room.LoadingRoomState
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
@@ -71,9 +68,7 @@ class RoomFlowNode(
     private val client: MatrixClient,
     private val joinRoomEntryPoint: JoinRoomEntryPoint,
     private val roomAliasResolverEntryPoint: RoomAliasResolverEntryPoint,
-    private val syncService: SyncService,
     private val membershipObserver: RoomMembershipObserver,
-    private val spaceEntryPoint: SpaceEntryPoint,
 ) : BaseFlowNode<RoomFlowNode.NavTarget>(
     backstack = BackStack(
         initialElement = NavTarget.Loading,
@@ -108,9 +103,6 @@ class RoomFlowNode(
 
         @Parcelize
         data class JoinedRoom(val roomId: RoomId) : NavTarget
-
-        @Parcelize
-        data class JoinedSpace(val spaceId: RoomId) : NavTarget
     }
 
     override fun onBuilt() {
@@ -133,7 +125,6 @@ class RoomFlowNode(
 
     private fun subscribeToRoomInfoFlow(roomId: RoomId, serverNames: List<String>) {
         val roomInfoFlow = client.getRoomInfoFlow(roomId)
-        val isSpaceFlow = roomInfoFlow.map { it.getOrNull()?.isSpace.orFalse() }.distinctUntilChanged()
 
         // This observes the local membership changes for the room
         val membershipUpdateFlow = membershipObserver.updates
@@ -146,14 +137,10 @@ class RoomFlowNode(
             .map { it.getOrNull()?.currentUserMembership }
             .distinctUntilChanged()
             .withPreviousValue()
-        combine(currentMembershipFlow, isSpaceFlow) { (previousMembership, membership), isSpace ->
+        currentMembershipFlow.onEach { (previousMembership, membership) ->
             Timber.d("Room membership: $membership")
             if (membership == CurrentUserMembership.JOINED) {
-                if (isSpace) {
-                    backstack.newRoot(NavTarget.JoinedSpace(spaceId = roomId))
-                } else {
-                    backstack.newRoot(NavTarget.JoinedRoom(roomId))
-                }
+                backstack.newRoot(NavTarget.JoinedRoom(roomId))
             } else {
                 val leavingFromCurrentDevice =
                     membership == CurrentUserMembership.LEFT &&
@@ -188,10 +175,12 @@ class RoomFlowNode(
                     }
                 }
                 val params = Params(navTarget.roomAlias)
-                roomAliasResolverEntryPoint.nodeBuilder(this, buildContext)
-                    .callback(callback)
-                    .params(params)
-                    .build()
+                roomAliasResolverEntryPoint.createNode(
+                    parentNode = this,
+                    buildContext = buildContext,
+                    params = params,
+                    callback = callback,
+                )
             }
             is NavTarget.JoinRoom -> {
                 val inputs = JoinRoomEntryPoint.Inputs(
@@ -201,7 +190,11 @@ class RoomFlowNode(
                     serverNames = navTarget.serverNames,
                     trigger = navTarget.trigger,
                 )
-                joinRoomEntryPoint.createNode(this, buildContext, inputs)
+                joinRoomEntryPoint.createNode(
+                    parentNode = this,
+                    buildContext = buildContext,
+                    inputs = inputs,
+                )
             }
             is NavTarget.JoinedRoom -> {
                 val roomFlowNodeCallback = plugins<JoinedRoomLoadedFlowNode.Callback>()
@@ -211,21 +204,17 @@ class RoomFlowNode(
                 )
                 createNode<JoinedRoomFlowNode>(buildContext, plugins = listOf(inputs) + roomFlowNodeCallback)
             }
-            is NavTarget.JoinedSpace -> {
-                val spaceCallback = plugins<SpaceEntryPoint.Callback>().single()
-                spaceEntryPoint.nodeBuilder(this, buildContext)
-                    .inputs(SpaceEntryPoint.Inputs(roomId = navTarget.spaceId))
-                    .callback(spaceCallback)
-                    .build()
-            }
         }
     }
 
+    suspend fun attachThread(threadId: ThreadId, focusedEventId: EventId?) {
+        waitForChildAttached<JoinedRoomFlowNode>()
+            .attachThread(threadId, focusedEventId)
+    }
+
     private fun loadingNode(buildContext: BuildContext) = node(buildContext) { modifier ->
-        val isOnline by syncService.isOnline.collectAsState()
         LoadingRoomNodeView(
             state = LoadingRoomState.Loading,
-            hasNetworkConnection = isOnline,
             onBackClick = { navigateUp() },
             modifier = modifier,
         )

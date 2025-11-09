@@ -18,6 +18,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
 import io.element.android.features.networkmonitor.api.NetworkStatus
 import io.element.android.features.networkmonitor.test.FakeNetworkMonitor
+import io.element.android.libraries.androidutils.json.DefaultJsonProvider
 import io.element.android.libraries.push.api.push.SyncOnNotifiableEvent
 import io.element.android.libraries.push.impl.notifications.FakeNotifiableEventResolver
 import io.element.android.libraries.push.impl.notifications.NotificationResolverQueue
@@ -27,13 +28,13 @@ import io.element.android.libraries.push.test.notifications.FakeNotificationReso
 import io.element.android.libraries.workmanager.api.WorkManagerRequest
 import io.element.android.libraries.workmanager.api.di.MetroWorkerFactory
 import io.element.android.libraries.workmanager.test.FakeWorkManagerScheduler
+import io.element.android.services.toolbox.test.sdk.FakeBuildVersionSdkIntProvider
 import io.element.android.tests.testutils.lambda.lambdaRecorder
 import io.element.android.tests.testutils.testCoroutineDispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -175,7 +176,8 @@ class FetchNotificationWorkerTest {
         workManagerScheduler = workManagerScheduler,
         syncOnNotifiableEvent = syncOnNotifiableEvent,
         coroutineDispatchers = testCoroutineDispatchers(),
-        json = Json {},
+        workerDataConverter = WorkerDataConverter(DefaultJsonProvider()),
+        buildVersionSdkIntProvider = FakeBuildVersionSdkIntProvider(33),
     )
 
     private fun TestScope.createWorkerParams(

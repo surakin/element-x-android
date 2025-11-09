@@ -95,6 +95,7 @@
   <string name="action_forgot_password">"Kas unustasid salasõna?"</string>
   <string name="action_forward">"Edasta"</string>
   <string name="action_go_back">"Tagasi eelmisesse vaatesse"</string>
+  <string name="action_go_to_roles_and_permissions">"Ava „Rollid ja õigused“"</string>
   <string name="action_go_to_settings">"Ava seadistused"</string>
   <string name="action_ignore">"Eira"</string>
   <string name="action_invite">"Kutsu"</string>
@@ -229,6 +230,7 @@ Põhjus: %1$s."</string>
   <string name="common_install_apk_android">"Paigalda APK-failist"</string>
   <string name="common_invite_unknown_profile">"Sellist Matrix\'i kasutajatunnust ei õnnestu leida, seega sõnumit ilmselt keegi kätte ei saa."</string>
   <string name="common_leaving_room">"Oled lahkumas jututoast"</string>
+  <string name="common_leaving_space">"Oled lahkumas kogukonnast"</string>
   <string name="common_light">"Hele"</string>
   <string name="common_line_copied_to_clipboard">"Rida on kopeeritud lõikelauale"</string>
   <string name="common_link_copied_to_clipboard">"Link on kopeeritud lõikelauale"</string>
@@ -317,6 +319,7 @@ Põhjus: %1$s."</string>
   <string name="common_settings">"Seadistused"</string>
   <string name="common_share_space">"Jaga kogukonda"</string>
   <string name="common_shared_location">"Jagatud asukoht"</string>
+  <string name="common_shared_space">"Jagatud kogukond"</string>
   <string name="common_signing_out">"Logime välja"</string>
   <string name="common_something_went_wrong">"Midagi läks valesti"</string>
   <string name="common_something_went_wrong_message">"Tekkis viga. Palun proovi uuesti."</string>
@@ -418,6 +421,7 @@ Kas sa oled kindel, et soovid jätkata?"</string>
   <string name="invite_friends_rich_title">"🔐️ Liitu minuga rakenduses %1$s"</string>
   <string name="invite_friends_text">"Hei, suhtle minuga %1$s võrgus: %2$s"</string>
   <string name="login_initial_device_name_android">"%1$s Android"</string>
+  <string name="notification_thread_in_room">"Jutulõng „%1$s“ jututoas"</string>
   <string name="preference_rageshake">"Veast teatamiseks raputa nutiseadet ägedalt"</string>
   <string name="screen_bug_report_a11y_screenshot">"Ekraanitõmmis"</string>
   <string name="screen_create_poll_option_accessibility_label">"%1$s: %2$s"</string>
@@ -464,6 +468,10 @@ Kas sa oled kindel, et soovid jätkata?"</string>
   <string name="screen_space_list_details">"%1$s • %2$s"</string>
   <string name="screen_space_list_parent_space">"Kogukond: %1$s"</string>
   <string name="screen_space_list_title">"Kogukonnad"</string>
+  <string name="screen_space_menu_action_members">"Vaata liikmeid"</string>
+  <string name="screen_space_settings_leave_space">"Lahku kogukonnast"</string>
+  <string name="screen_space_settings_roles_and_permissions">"Rollid ja õigused"</string>
+  <string name="screen_space_settings_security_and_privacy">"Turvalisus ja privaatsus"</string>
   <string name="screen_timeline_item_menu_send_failure_changed_identity">"Sõnum on saatmata, kuna kasutaja %1$s verifitseeritud identiteet on lähtestatud."</string>
   <string name="screen_timeline_item_menu_send_failure_unsigned_device">"Sõnum on saatmata, kuna %1$s pole verifitseerinud kõiki oma seadmeid."</string>
   <string name="screen_timeline_item_menu_send_failure_you_unsigned_device">"Kuna sa pole üks või enamgi oma seadet verifitseerinud, siis sinu sõnum on saatmata."</string>
